@@ -1,0 +1,73 @@
+<?php
+
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminAuditController;
+use App\Http\Controllers\AdminCustomerController;
+use App\Http\Controllers\AdminGalleryController;
+use App\Http\Controllers\AdminMediaController;
+use App\Http\Controllers\AdminPackageController;
+use App\Http\Controllers\AdminReviewController;
+use App\Http\Controllers\AdminServiceController;
+use App\Http\Controllers\AdminSettingsController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\ServiceController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', HomeController::class)->name('home');
+Route::get('/services/{slug}', [ServiceController::class, 'show'])->name('services.show');
+Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+Route::get('/gallery', [PageController::class, 'gallery'])->name('gallery');
+Route::get('/booking/{reference}', [PageController::class, 'booking'])->name('booking.show');
+Route::get('/privacy-policy', fn () => app(PageController::class)->legal('privacy-policy'))->name('privacy');
+Route::get('/terms-of-service', fn () => app(PageController::class)->legal('terms-of-service'))->name('terms');
+Route::get('/sitemap.xml', fn () => response()->view('sitemap')->header('Content-Type', 'application/xml'))->name('sitemap');
+
+Route::get('/admin/login', [AuthController::class, 'create'])->name('admin.login');
+Route::post('/admin/login', [AuthController::class, 'store'])->name('admin.login.store');
+Route::post('/admin/logout', [AuthController::class, 'destroy'])->name('admin.logout');
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard.home');
+    Route::get('/bookings', [AdminController::class, 'bookings'])->name('bookings');
+    Route::get('/bookings/{booking}', [AdminController::class, 'showBooking'])->name('bookings.show');
+    Route::patch('/bookings/{booking}', [AdminController::class, 'updateBooking'])->name('bookings.update');
+    Route::get('/content', [AdminController::class, 'content'])->name('content');
+    Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
+    Route::get('/services/create', [AdminServiceController::class, 'create'])->name('services.create');
+    Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
+    Route::get('/services/{service}/edit', [AdminServiceController::class, 'edit'])->name('services.edit');
+    Route::put('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
+    Route::delete('/services/{service}', [AdminServiceController::class, 'destroy'])->name('services.destroy');
+    Route::patch('/services/{service}/visibility', [AdminServiceController::class, 'toggle'])->name('services.visibility');
+    Route::get('/packages', [AdminPackageController::class, 'index'])->name('packages.index');
+    Route::get('/packages/create', [AdminPackageController::class, 'create'])->name('packages.create');
+    Route::post('/packages', [AdminPackageController::class, 'store'])->name('packages.store');
+    Route::get('/packages/{package}/edit', [AdminPackageController::class, 'edit'])->name('packages.edit');
+    Route::put('/packages/{package}', [AdminPackageController::class, 'update'])->name('packages.update');
+    Route::delete('/packages/{package}', [AdminPackageController::class, 'destroy'])->name('packages.destroy');
+    Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
+    Route::post('/media', [AdminMediaController::class, 'store'])->name('media.store');
+    Route::put('/media/{media}', [AdminMediaController::class, 'update'])->name('media.update');
+    Route::delete('/media/{media}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
+    Route::get('/gallery', [AdminGalleryController::class, 'index'])->name('gallery.index');
+    Route::post('/gallery', [AdminGalleryController::class, 'store'])->name('gallery.store');
+    Route::patch('/gallery/{galleryItem}/visibility', [AdminGalleryController::class, 'toggle'])->name('gallery.visibility');
+    Route::post('/gallery/pairs', [AdminGalleryController::class, 'storePair'])->name('gallery.pairs.store');
+    Route::patch('/gallery/pairs/{pair}/visibility', [AdminGalleryController::class, 'togglePair'])->name('gallery.pairs.visibility');
+    Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+    Route::get('/reviews/create', [AdminReviewController::class, 'create'])->name('reviews.create');
+    Route::post('/reviews', [AdminReviewController::class, 'store'])->name('reviews.store');
+    Route::get('/reviews/{review}/edit', [AdminReviewController::class, 'edit'])->name('reviews.edit');
+    Route::put('/reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
+    Route::patch('/reviews/{review}/visibility', [AdminReviewController::class, 'toggle'])->name('reviews.visibility');
+    Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+    Route::get('/customers/{customer}', [AdminCustomerController::class, 'show'])->name('customers.show');
+    Route::get('/audit-logs', [AdminAuditController::class, 'index'])->name('audit.index');
+});
