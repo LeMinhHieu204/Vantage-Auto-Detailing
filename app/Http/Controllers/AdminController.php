@@ -78,13 +78,17 @@ class AdminController extends Controller
                 if (! $locked->canTransitionTo($data['status'])) {
                     abort(422, "Cannot move {$locked->status} to {$data['status']}.");
                 }
-                if ($data['status'] === 'CONFIRMED' && ! empty($data['appointment_date']) && ! empty($data['appointment_time'])) {
-                    $conflict = Booking::query()->where('id', '<>', $locked->id)
-                        ->where('status', 'CONFIRMED')
-                        ->whereDate('appointment_date', $data['appointment_date'])
-                        ->where('appointment_time', $data['appointment_time'])
-                        ->exists();
-                    if ($conflict) abort(422, 'That appointment slot is already assigned to another confirmed booking.');
+                $currentDate = optional($locked->appointment_date)->toDateString();
+                $nextDate = array_key_exists('appointment_date', $data) ? $data['appointment_date'] : $currentDate;
+                $nextTime = array_key_exists('appointment_time', $data) ? $data['appointment_time'] : $locked->appointment_time;
+                $slotChanged = $locked->status === 'CONFIRMED' && ($data['status'] !== 'CONFIRMED' || $currentDate !== $nextDate || $locked->appointment_time !== $nextTime);
+                if ($slotChanged) DB::table('booking_slots')->where('booking_id', $locked->id)->delete();
+                if ($data['status'] === 'CONFIRMED' && $nextDate && $nextTime) {
+                    $legacyConflict = Booking::query()->where('id', '<>', $locked->id)->where('status', 'CONFIRMED')->whereDate('appointment_date', $nextDate)->where('appointment_time', $nextTime)->exists();
+                    if ($legacyConflict) abort(422, 'That appointment slot is already assigned to another confirmed booking.');
+                    DB::table('booking_slots')->insertOrIgnore(['appointment_date' => $nextDate, 'appointment_time' => $nextTime, 'booking_id' => $locked->id, 'created_at' => now(), 'updated_at' => now()]);
+                    $slot = DB::table('booking_slots')->where(['appointment_date' => $nextDate, 'appointment_time' => $nextTime])->lockForUpdate()->first();
+                    if (! $slot || (int) $slot->booking_id !== (int) $locked->id) abort(422, 'That appointment slot is already assigned to another confirmed booking.');
                 }
                 $previous = $locked->status;
                 $locked->update([

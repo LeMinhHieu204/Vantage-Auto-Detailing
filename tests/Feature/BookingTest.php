@@ -97,4 +97,18 @@ class BookingTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $existing->id, 'status' => 'CONFIRMED']);
         $this->assertDatabaseHas('bookings', ['id' => $candidate->id, 'status' => 'PENDING']);
     }
+
+    public function test_confirmation_claims_a_unique_slot_resource(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $first = Booking::create(['reference' => 'VA-SLOT1234', 'status' => 'PENDING', 'full_name' => 'First Customer', 'email' => 'first@example.com', 'phone' => '555 000 0001', 'vehicle_make' => 'BMW', 'vehicle_model' => 'M3']);
+        $second = Booking::create(['reference' => 'VA-SLOT5678', 'status' => 'PENDING', 'full_name' => 'Second Customer', 'email' => 'second@example.com', 'phone' => '555 000 0002', 'vehicle_make' => 'Audi', 'vehicle_model' => 'S4']);
+        $slot = ['status' => 'CONFIRMED', 'appointment_date' => '2026-11-11', 'appointment_time' => '10:00 AM'];
+
+        $this->actingAs($admin)->patch(route('admin.bookings.update', $first), $slot)->assertRedirect();
+        $this->assertDatabaseHas('booking_slots', ['appointment_date' => '2026-11-11', 'appointment_time' => '10:00 AM', 'booking_id' => $first->id]);
+        $this->actingAs($admin)->patch(route('admin.bookings.update', $second), $slot)->assertSessionHasErrors('status');
+        $this->assertDatabaseCount('booking_slots', 1);
+        $this->assertDatabaseHas('bookings', ['id' => $second->id, 'status' => 'PENDING']);
+    }
 }

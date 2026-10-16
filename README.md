@@ -247,7 +247,7 @@ Browser viewport regression and screenshot capture were not run because the appr
 
 ## Security and quality notes
 
-Implemented controls include CSRF-protected forms, session regeneration on Admin login, an <code>is_admin</code> middleware gate, hashed passwords, Form Request validation, rate limiting, a booking honeypot, database transactions, row locking for booking updates, confirmed-slot conflict checks, upload MIME/size/dimension validation, audit logging and safe media-reference checks.
+Implemented controls include CSRF-protected forms, session regeneration on Admin login, an <code>is_admin</code> middleware gate, hashed passwords, Form Request validation, rate limiting, a booking honeypot, database transactions, deterministic unique slot resources with row locking, confirmed-slot conflict checks, upload MIME/size/dimension validation, audit logging and safe media-reference checks.
 
 The repository does not claim production readiness. Legal pages are starter copy, contact details are not verified, seeded Unsplash imagery is marked as development content, reviews remain pending until real feedback is supplied and approved, and mail-provider delivery still requires environment configuration.
 
